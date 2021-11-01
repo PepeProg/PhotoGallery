@@ -12,5 +12,5 @@ interface FlickrApiInterface{
             "&format=json" +    //default is xml
             "&nojsoncallback=1" +   //deleting () from response
             "&extras=url_s")    //adding url-address of small picture's version
-    fun fetchPhotos(): Call<FlickrResponse>
+    fun fetchPhotos(): Call<PhotoResponse>
 }

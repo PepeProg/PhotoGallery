@@ -1,15 +1,16 @@
 package com.example.photogallery
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 
 private const val TAG = "GalleryMainFragment"
 
@@ -29,9 +30,15 @@ class GalleryMainFragment: Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_gallery_main, container, false)
         recyclerView = view.findViewById(R.id.gallery_recycler_view) as RecyclerView
-        recyclerView.apply {
-            layoutManager = GridLayoutManager(context, 3)
-        }
+        val staggeredGridLayoutManager = StaggeredGridLayoutManager(1, GridLayoutManager.VERTICAL)
+        recyclerView.layoutManager = staggeredGridLayoutManager
+        recyclerView.viewTreeObserver.addOnGlobalLayoutListener(object: ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {     //this func will be called when Recycler's size is known and we can change number of columns according to it
+                staggeredGridLayoutManager.spanCount = 3
+                staggeredGridLayoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
+                recyclerView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+            }
+        })
         return view
     }
 

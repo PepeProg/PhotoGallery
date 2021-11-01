@@ -10,7 +10,7 @@ class PhotoGalleryViewModel: ViewModel() {
     init {
         FlickrApi.initialize()
         repository = FlickrFetcher(FlickrApi.get())
-        galleryItems =  repository.fetchPhotos()
+        galleryItems = repository.fetchPhotos()
     }
 
     override fun onCleared() {
