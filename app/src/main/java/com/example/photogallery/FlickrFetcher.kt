@@ -1,6 +1,5 @@
 package com.example.photogallery
 
-import android.app.ActivityManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
@@ -26,8 +25,16 @@ class FlickrFetcher(private var flickrApi: FlickrApi) {   //some kind of reposit
     }
 
     fun fetchPhotos(): LiveData<List<GalleryItem>> {
+        return fetchPhotoMetaData(flickrApi.flickrCall.fetchPhotos())
+    }
+
+    fun searchPhotos(query: String): LiveData<List<GalleryItem>> {
+        return fetchPhotoMetaData(flickrApi.flickrCall.searchPhotos(query))
+    }
+
+    private fun fetchPhotoMetaData(request: Call<PhotoResponse>): LiveData<List<GalleryItem>> {
         val fetchingData: MutableLiveData<List<GalleryItem>> = MutableLiveData()
-        flickrRequest = flickrApi.flickrCall.fetchPhotos()
+        flickrRequest = request
 
         flickrRequest.enqueue(object: Callback<PhotoResponse> {    //we are putting request into the queue
             override fun onFailure(call: Call<PhotoResponse>, t: Throwable) {

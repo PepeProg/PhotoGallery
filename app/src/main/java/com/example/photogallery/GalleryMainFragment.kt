@@ -6,18 +6,14 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.ViewTreeObserver
+import android.view.*
 import android.widget.ImageView
-import android.widget.TextView
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import java.lang.IllegalStateException
 
 private const val TAG = "GalleryMainFragment"
 
@@ -29,6 +25,7 @@ class GalleryMainFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
         photoGalleryViewModel = ViewModelProvider(this).get(PhotoGalleryViewModel::class.java)
         retainInstance = true   //it is not the best decision, but it helps us to match downloader to fragment's lifecycle during configuration changing
         val responseHandler = Handler(Looper.getMainLooper())
@@ -38,7 +35,7 @@ class GalleryMainFragment: Fragment() {
         }
         lifecycle.addObserver(thumbnailDownloader.fragmentLifecycleObserver)  //allows observing fragment's lifecycle
         viewLifecycleOwnerLiveData.observe(this) {
-            it?.lifecycle?.addObserver(thumbnailDownloader.viewLifecycleObserver)
+            it?.lifecycle?.addObserver(thumbnailDownloader.viewLifecycleObserver)   //observing fragment's view lifecycle
         }
     }
 
@@ -66,6 +63,43 @@ class GalleryMainFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         photoGalleryViewModel.galleryItems.observe(viewLifecycleOwner) {
             recyclerView.adapter = PhotoAdapter(it)
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.fragment_gallery_main, menu)
+
+        val searchItem: MenuItem = menu.findItem(R.id.search_view)
+        val searchView: SearchView = searchItem.actionView as SearchView
+        searchView.apply {
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(p0: String?): Boolean {  //calls when the whole text has been typed
+                    photoGalleryViewModel.searchPhotos(p0)
+                    searchView.clearFocus() //closing keyboard
+                    recyclerView.adapter = PhotoAdapter(emptyList())
+                    return true
+                }
+
+                override fun onQueryTextChange(p0: String?): Boolean {  //calls every time when text is being typed
+                    return false
+                }
+            })
+
+            setOnSearchClickListener {
+                searchView.setQuery(photoGalleryViewModel.storedSearch, false)  //setting title for the search when SearchView is opening
+            }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when(item.itemId) {
+            R.id.clear_search -> {
+                photoGalleryViewModel.searchPhotos("")  //clearing stored query
+                recyclerView.adapter = PhotoAdapter(emptyList())
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
