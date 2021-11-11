@@ -7,7 +7,7 @@ import com.example.photogallery.api.FlickrApi
 class PhotoGalleryViewModel(private val app: Application): AndroidViewModel(app) {
     val galleryItems: LiveData<List<GalleryItem>>
     private var repository: FlickrFetcher
-    private val searchQuery = MutableLiveData(SharedPreferences.getStoredQuery(app))
+    private val searchQuery = MutableLiveData(PhotoPreferences.getStoredQuery(app))
 
     val storedSearch
         get() = searchQuery.value ?: ""
@@ -25,7 +25,7 @@ class PhotoGalleryViewModel(private val app: Application): AndroidViewModel(app)
 
     fun searchPhotos(query: String?) {
         query?.let {
-            SharedPreferences.setStoredQuery(app, query)    //saving our last query
+            PhotoPreferences.setStoredQuery(app, query)    //saving our last query
             searchQuery.value = it
         }
     }

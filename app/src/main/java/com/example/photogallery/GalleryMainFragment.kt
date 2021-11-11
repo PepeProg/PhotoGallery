@@ -14,10 +14,13 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.*
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "GalleryMainFragment"
+private const val POLL_WORK = "pollWork"
 
-class GalleryMainFragment: Fragment() {
+class GalleryMainFragment: VisibleFragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var photoGalleryViewModel: PhotoGalleryViewModel
     private lateinit var thumbnailDownloader: ThumbnailDownloader<PhotoHolder>  //downloaded images will be saved in the PhotoHolder,
@@ -37,6 +40,7 @@ class GalleryMainFragment: Fragment() {
         viewLifecycleOwnerLiveData.observe(this) {
             it?.lifecycle?.addObserver(thumbnailDownloader.viewLifecycleObserver)   //observing fragment's view lifecycle
         }
+
     }
 
     override fun onCreateView(
@@ -77,7 +81,6 @@ class GalleryMainFragment: Fragment() {
                 override fun onQueryTextSubmit(p0: String?): Boolean {  //calls when the whole text has been typed
                     photoGalleryViewModel.searchPhotos(p0)
                     searchView.clearFocus() //closing keyboard
-                    recyclerView.adapter = PhotoAdapter(emptyList())
                     return true
                 }
 
@@ -90,13 +93,45 @@ class GalleryMainFragment: Fragment() {
                 searchView.setQuery(photoGalleryViewModel.storedSearch, false)  //setting title for the search when SearchView is opening
             }
         }
+
+        val pollingControl = menu.findItem(R.id.polling_control)
+        val isPolling = PhotoPreferences.isPolling(requireContext())
+        val controlText = if (isPolling) {
+            R.string.stop_polling
+        } else {
+           R.string.start_polling
+        }
+        pollingControl.setTitle(controlText)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.clear_search -> {
                 photoGalleryViewModel.searchPhotos("")  //clearing stored query
-                recyclerView.adapter = PhotoAdapter(emptyList())
+                true
+            }
+            R.id.polling_control -> {
+                val isPolling = PhotoPreferences.isPolling(requireContext())
+                if (isPolling) {    //if work exists we shall delete it
+                    WorkManager.getInstance().cancelUniqueWork(POLL_WORK)
+                    PhotoPreferences.setPolling(requireContext(), false)
+                }
+                else {    //creating periodic work
+                    val constraints = Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.UNMETERED)
+                        .build()
+
+                    val workPeriodicRequest = PeriodicWorkRequest
+                        .Builder(CustomWorker::class.java, 15, TimeUnit.MINUTES)
+                        .setConstraints(constraints)
+                        .build()    //creating a request for work using our class Worker
+
+                    WorkManager.getInstance()
+                        .enqueueUniquePeriodicWork(POLL_WORK, ExistingPeriodicWorkPolicy.KEEP, workPeriodicRequest) //policy shows what manager should do if this work already exists
+                    PhotoPreferences.setPolling(requireContext(), true)
+                }
+
+                activity?.invalidateOptionsMenu()   //calling onCreateOptionsMenu()
                 true
             }
             else -> super.onOptionsItemSelected(item)

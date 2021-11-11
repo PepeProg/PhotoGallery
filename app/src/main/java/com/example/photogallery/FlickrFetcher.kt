@@ -24,12 +24,20 @@ class FlickrFetcher(private var flickrApi: FlickrApi) {   //some kind of reposit
         bitmapCache = LruCache(cacheSize)
     }
 
+    fun fetchPhotosRequest(): Call<PhotoResponse> {
+        return flickrApi.flickrCall.fetchPhotos()
+    }
+
     fun fetchPhotos(): LiveData<List<GalleryItem>> {
-        return fetchPhotoMetaData(flickrApi.flickrCall.fetchPhotos())
+        return fetchPhotoMetaData(fetchPhotosRequest())
+    }
+
+    fun searchPhotosRequest(query: String): Call<PhotoResponse> {
+        return flickrApi.flickrCall.searchPhotos(query)
     }
 
     fun searchPhotos(query: String): LiveData<List<GalleryItem>> {
-        return fetchPhotoMetaData(flickrApi.flickrCall.searchPhotos(query))
+        return fetchPhotoMetaData(searchPhotosRequest(query))
     }
 
     private fun fetchPhotoMetaData(request: Call<PhotoResponse>): LiveData<List<GalleryItem>> {
