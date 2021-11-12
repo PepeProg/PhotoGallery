@@ -1,5 +1,6 @@
 package com.example.photogallery
 
+import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -138,11 +139,25 @@ class GalleryMainFragment: VisibleFragment() {
         }
     }
 
-    private class PhotoHolder(itemView: ImageView): RecyclerView.ViewHolder(itemView) {
+    private inner class PhotoHolder(itemView: ImageView)
+        : RecyclerView.ViewHolder(itemView), View.OnClickListener {
         val bindDrawable: (Drawable) -> Unit = itemView::setImageDrawable
+        private lateinit var galleryItem: GalleryItem
+        init {
+            itemView.setOnClickListener(this)
+        }
+
+        override fun onClick(p0: View?) {
+            startActivity(Intent(Intent.ACTION_VIEW, galleryItem.photoPageUri))
+        }
+
+        fun bindGalleryItem(galleryItem: GalleryItem) {
+            this.galleryItem = galleryItem
+        }
     }
 
-    private inner class PhotoAdapter(val galleryList: List<GalleryItem>):RecyclerView.Adapter<PhotoHolder>() {
+    private inner class PhotoAdapter(val galleryList: List<GalleryItem>)
+        :RecyclerView.Adapter<PhotoHolder>() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoHolder {
             val imageView = layoutInflater.inflate(
                 R.layout.item_gallery_view,
@@ -154,6 +169,7 @@ class GalleryMainFragment: VisibleFragment() {
 
         override fun onBindViewHolder(holder: PhotoHolder, position: Int) {
             val url = galleryList[position].url
+            holder.bindGalleryItem(galleryList[position])
             thumbnailDownloader.queueThumbnail(holder, url)
             val placeHolder = ContextCompat.getDrawable(
                 requireContext(),

@@ -17,6 +17,7 @@ class CustomWorker(private val context: Context, workerParams: WorkerParameters)
     override fun doWork(): Result {
         val query = PhotoPreferences.getStoredQuery(context)
         val lastResult = PhotoPreferences.getLastResultId(context)
+        FlickrApi.initialize()
         val currentPhotoList: List<GalleryItem> = if (query.isEmpty()) {    //making another request to compare results
             FlickrFetcher(FlickrApi.get()).fetchPhotosRequest()
                 .execute()                                                  //making request in the current thread
